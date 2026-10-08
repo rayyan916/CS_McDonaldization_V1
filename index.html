@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球化大亨：麥當勞化帝國</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a202c; /* Tailwind gray-900 */
+            color: #f7fafc; /* Tailwind gray-100 */
+            overflow-x: hidden;
+        }
+
+        /* 麥當勞化主題色：紅與黃 */
+        .theme-red { background-color: #E31837; }
+        .theme-yellow { color: #FFC72C; }
+        .bg-theme-yellow { background-color: #FFC72C; }
+        .border-theme-yellow { border-color: #FFC72C; }
+
+        .glass-panel {
+            background: rgba(45, 55, 72, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 進度條動畫 */
+        .progress-bar-transition {
+            transition: width 0.5s ease-in-out, background-color 0.3s;
+        }
+        
+        /* 滾動條美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2d3748; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a5568; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096; 
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center">
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="w-full max-w-md p-8 glass-panel rounded-2xl shadow-2xl text-center fade-in m-4">
+        <div class="mb-6">
+            <div class="w-24 h-24 bg-theme-yellow rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg shadow-yellow-500/50">
+                <span class="text-5xl font-black text-red-600">M</span>
+            </div>
+            <h1 class="text-3xl font-black text-white mb-2 tracking-wider">全球化大亨</h1>
+            <h2 class="text-xl theme-yellow font-bold mb-4">麥當勞化帝國</h2>
+            <p class="text-sm text-gray-400 text-left mb-4">
+                歡迎，未來的跨國CEO！在這個遊戲中，你將學習「經濟全球化」與「麥當勞化」的概念。<br><br>
+                你的目標是透過商業決策（合法、非法、或在地化策略）來最大化利潤與市佔率，同時避免聲望歸零破產。
+            </p>
+        </div>
+        <input type="text" id="player-name" placeholder="請輸入你的 CEO 姓名" class="w-full px-4 py-3 rounded-lg bg-gray-800 text-white border border-gray-600 focus:outline-none focus:border-yellow-500 mb-6 text-center text-lg placeholder-gray-500">
+        <button onclick="startGame()" class="w-full theme-red hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 transform hover:scale-105 shadow-lg shadow-red-500/50">
+            開始統治全球市場
+        </button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden w-full max-w-4xl p-4 md:p-6 flex-col min-h-screen">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-6 glass-panel p-4 rounded-xl">
+            <div class="flex items-center gap-4 mb-4 md:mb-0">
+                <div class="w-12 h-12 bg-theme-yellow rounded-full flex items-center justify-center text-red-600 font-bold text-2xl">
+                    M
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold">CEO: <span id="display-name" class="theme-yellow"></span></h2>
+                    <p class="text-sm text-gray-400">目前回合: <span id="display-turn" class="text-white font-bold">1</span> / 10</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-400 uppercase tracking-widest">企業終極目標</p>
+                <p class="text-sm font-bold theme-yellow">利潤最大化 & 全球同質化</p>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Funds -->
+            <div class="glass-panel p-4 rounded-xl border-l-4 border-green-500">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-gray-400 font-bold">資金 (利潤)</span>
+                    <span class="text-2xl font-black text-green-400">$<span id="stat-funds">100</span>M</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="bar-funds" class="bg-green-500 h-2.5 rounded-full progress-bar-transition" style="width: 50%"></div>
+                </div>
+            </div>
+            <!-- Reputation -->
+            <div class="glass-panel p-4 rounded-xl border-l-4 border-blue-500">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-gray-400 font-bold">社會聲望</span>
+                    <span class="text-2xl font-black text-blue-400"><span id="stat-rep">50</span> / 100</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="bar-rep" class="bg-blue-500 h-2.5 rounded-full progress-bar-transition" style="width: 50%"></div>
+                </div>
+            </div>
+            <!-- Market Share -->
+            <div class="glass-panel p-4 rounded-xl border-l-4 border-yellow-500">
+                <div class="flex justify-between items-end mb-2">
+                    <span class="text-gray-400 font-bold">全球市佔率</span>
+                    <span class="text-2xl font-black theme-yellow"><span id="stat-market">10</span>%</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                    <div id="bar-market" class="bg-yellow-500 h-2.5 rounded-full progress-bar-transition" style="width: 10%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game Area -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
+            
+            <!-- Scenario & Actions -->
+            <div class="lg:col-span-2 flex flex-col gap-4">
+                <div class="glass-panel p-6 rounded-xl flex-grow flex flex-col justify-center relative overflow-hidden">
+                    <!-- Decorative background element -->
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-red-600 opacity-10 rounded-full blur-2xl"></div>
+                    
+                    <h3 id="scenario-title" class="text-2xl font-bold theme-yellow mb-4 z-10">載入情境中...</h3>
+                    <p id="scenario-desc" class="text-lg text-gray-200 mb-6 leading-relaxed z-10">
+                        請稍候...
+                    </p>
+                    
+                    <div id="action-buttons" class="flex flex-col gap-3 z-10 mt-auto">
+                        <!-- Buttons injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- News / Logs -->
+            <div class="glass-panel p-4 rounded-xl flex flex-col h-96 lg:h-auto">
+                <h3 class="text-lg font-bold text-gray-300 mb-3 border-b border-gray-700 pb-2 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
+                    全球新聞與影響
+                </h3>
+                <div id="news-log" class="flex-1 overflow-y-auto pr-2 space-y-3 text-sm">
+                    <div class="text-gray-500 italic">尚未有任何新聞...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen" class="hidden w-full max-w-2xl p-8 glass-panel rounded-2xl shadow-2xl text-center fade-in m-4">
+        <h1 class="text-4xl font-black mb-2" id="end-title">遊戲結束</h1>
+        <h2 class="text-2xl font-bold mb-6" id="end-subtitle">評語</h2>
+        
+        <div class="grid grid-cols-3 gap-4 mb-8">
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <p class="text-gray-400 text-sm">最終資金</p>
+                <p class="text-xl font-bold text-green-400">$<span id="end-funds">0</span>M</p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <p class="text-gray-400 text-sm">最終聲望</p>
+                <p class="text-xl font-bold text-blue-400"><span id="end-rep">0</span></p>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <p class="text-gray-400 text-sm">最終市佔</p>
+                <p class="text-xl font-bold theme-yellow"><span id="end-market">0</span>%</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-lg mb-8 text-left">
+            <h3 class="font-bold text-lg mb-2 text-white">教育解析：</h3>
+            <p id="end-analysis" class="text-gray-300 text-sm leading-relaxed"></p>
+        </div>
+
+        <button onclick="location.reload()" class="w-full bg-theme-yellow hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-lg transition duration-300">
+            重新開始遊戲
+        </button>
+    </div>
+
+    <!-- Custom Modal (Replacment for alert) -->
+    <div id="custom-modal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="bg-gray-800 border-2 border-yellow-500 rounded-xl p-6 max-w-sm w-full text-center shadow-2xl fade-in">
+            <div class="text-yellow-500 mb-4">
+                <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 id="modal-title" class="text-xl font-bold text-white mb-2">提示</h3>
+            <p id="modal-message" class="text-gray-300 mb-6"></p>
+            <button onclick="closeModal()" class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-6 rounded-lg">
+                確定
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲狀態
+        let state = {
+            name: "",
+            turn: 1,
+            maxTurns: 10,
+            funds: 100,
+            reputation: 60,
+            marketShare: 10,
+            history: []
+        };
+
+        // 情境題庫 (包含麥當勞化四大特徵、在地化、非法剝削等概念)
+        const scenarios = [
+            {
+                title: "進軍新興亞洲市場",
+                desc: "公司計畫進軍一個擁有深厚飲食文化的新興市場。當地人對美式速食感到陌生，你打算採取哪種策略？",
+                choices: [
+                    { 
+                        text: "強推標準美式菜單 (高度麥當勞化/同質化)", 
+                        type: "legal",
+                        effect: { funds: 15, rep: -5, market: 5 },
+                        log: "堅持標準化流程節省了成本，但當地消費者抱怨口味不合，認為企業傲慢。"
+                    },
+                    { 
+                        text: "研發在地化限定口味 (全球在地化 Glocalization)", 
+                        type: "glocal",
+                        effect: { funds: -10, rep: 15, market: 15 },
+                        log: "在地化菜單大受歡迎！雖然初期研發成本高，但成功融入當地社會，市佔率大增。"
+                    },
+                    { 
+                        text: "賄賂當地官員取得黃金地段 (非法手段)", 
+                        type: "illegal",
+                        effect: { funds: -5, rep: -20, market: 20 },
+                        log: "透過黑箱作業取得精華地段，市佔暴增，但醜聞走漏導致品牌聲譽受損。"
+                    }
+                ]
+            },
+            {
+                title: "供應鏈成本控制",
+                desc: "為了達到「可計算性」與「效率」，董事會要求降低全球牛肉供應的成本。你要如何執行？",
+                choices: [
+                    { 
+                        text: "導入全自動化與標準化屠宰 (麥當勞化)", 
+                        type: "legal",
+                        effect: { funds: 20, rep: -5, market: 0 },
+                        log: "極致的自動化提升了利潤，但裁員與冰冷的企業形象讓社會觀感不佳。"
+                    },
+                    { 
+                        text: "非法砍伐雨林以擴建廉價牧場 (極端剝削)", 
+                        type: "illegal",
+                        effect: { funds: 40, rep: -35, market: 5 },
+                        log: "牛肉成本降至冰點，利潤破表！但環保團體發起跨國抵制，聲望暴跌。"
+                    },
+                    { 
+                        text: "採購符合永續發展的當地食材 (配合社會脈絡)", 
+                        type: "glocal",
+                        effect: { funds: -15, rep: 20, market: 5 },
+                        log: "雖然成本增加導致短期利潤下降，但贏得了消費者的信任與國際讚譽。"
+                    }
+                ]
+            },
+            {
+                title: "人力資源與薪資政策",
+                desc: "在全球擴張中，基層員工的薪資是一筆巨大開銷。如何管理全球數十萬名員工？",
+                choices: [
+                    { 
+                        text: "制定嚴格SOP並維持最低工資 (麥當勞化:控制)", 
+                        type: "legal",
+                        effect: { funds: 15, rep: -10, market: 0 },
+                        log: "工作被拆解為無技術含量的SOP (去技能化)，利潤穩定，但員工淪為機器的螺絲釘。"
+                    },
+                    { 
+                        text: "透過暗黑仲介聘用未成年黑工 (非法手段)", 
+                        type: "illegal",
+                        effect: { funds: 35, rep: -40, market: 0 },
+                        log: "極致壓榨勞工帶來驚人暴利，但遭到國際勞工組織調查，面臨嚴峻的公關危機！"
+                    },
+                    { 
+                        text: "提供高於行情的薪資與工會權益 (在地關懷)", 
+                        type: "glocal",
+                        effect: { funds: -20, rep: 25, market: 5 },
+                        log: "善待員工提升了服務品質，離職率下降。大眾對企業好感度提升。"
+                    }
+                ]
+            },
+            {
+                title: "面對強勢的在地競爭者",
+                desc: "在歐洲市場，一家主打「慢食文化」與在地小農的連鎖店正在威脅我們的市佔率。",
+                choices: [
+                    { 
+                        text: "發動跨國資本價格戰 (資本優勢)", 
+                        type: "legal",
+                        effect: { funds: -15, rep: -5, market: 15 },
+                        log: "利用龐大的跨國資金進行流血促銷，成功擠壓對手生存空間，但被批評為惡霸。"
+                    },
+                    { 
+                        text: "收購對手並解散其品牌 (同質化吞噬)", 
+                        type: "legal",
+                        effect: { funds: -30, rep: -15, market: 25 },
+                        log: "直接消滅競爭者！市場被我們的標準化產品壟斷，但也扼殺了文化多樣性。"
+                    },
+                    { 
+                        text: "推出結合在地文化的限定高端副牌 (全球在地化)", 
+                        type: "glocal",
+                        effect: { funds: -15, rep: 10, market: 10 },
+                        log: "以多元化的策略迎戰，吸引了不同的客群，成功與在地對手和平共存並獲利。"
+                    }
+                ]
+            },
+            {
+                title: "公關危機：食安疑慮",
+                desc: "網路瘋傳我們的加工肉品含有未經核准的化學添加物，雖然合法但在道德上有爭議。",
+                choices: [
+                    { 
+                        text: "運用龐大公關預算壓下新聞 (控制)", 
+                        type: "legal",
+                        effect: { funds: -15, rep: -15, market: -5 },
+                        log: "新聞被壓下了，但在社群媒體上引發反彈，消費者認為企業缺乏透明度。"
+                    },
+                    { 
+                        text: "雇傭黑道恐嚇吹哨者與記者 (非法手段)", 
+                        type: "illegal",
+                        effect: { funds: -5, rep: -45, market: -10 },
+                        log: "手段極其惡劣！事情最終還是曝光，企業形象跌落谷底，面臨倒閉危機。"
+                    },
+                    { 
+                        text: "公開道歉，全面更換天然配方 (負責任)", 
+                        type: "glocal",
+                        effect: { funds: -30, rep: 20, market: 5 },
+                        log: "付出極大的財務代價更新全球配方，但展現了企業責任，挽回並提升了聲譽。"
+                    }
+                ]
+            },
+            {
+                title: "科技升級：點餐自動化",
+                desc: "為了追求極致的「可預測性」與「效率」，技術部門建議全球門市導入AI點餐機。",
+                choices: [
+                    { 
+                        text: "全面裁撤收銀員，強制導入AI (麥當勞化)", 
+                        type: "legal",
+                        effect: { funds: 25, rep: -15, market: 5 },
+                        log: "大幅降低人事成本，點餐效率極高。但造成全球大量失業，引發抗議。"
+                    },
+                    { 
+                        text: "AI監控員工一舉一動以防偷懶 (極端控制/非法邊緣)", 
+                        type: "illegal",
+                        effect: { funds: 15, rep: -30, market: 0 },
+                        log: "把員工當作機器對待，嚴重侵犯隱私，爆發離職潮與人權官司。"
+                    },
+                    { 
+                        text: "漸進式導入，提供員工轉職培訓 (社會責任)", 
+                        type: "glocal",
+                        effect: { funds: -10, rep: 15, market: 0 },
+                        log: "升級過程平順，員工轉向提供更具人情味的桌邊服務，顧客滿意度高。"
+                    }
+                ]
+            },
+            {
+                title: "行銷策略：兒童市場",
+                desc: "行銷部門提出了一項針對兒童的全球行銷計畫，希望能培養下一代忠實顧客。",
+                choices: [
+                    { 
+                        text: "隨餐附贈高成癮性廉價塑膠玩具 (麥當勞化)", 
+                        type: "legal",
+                        effect: { funds: 20, rep: -10, market: 10 },
+                        log: "「兒童餐玩具」策略大成功！但遭到家長與健康組織批評助長兒童肥胖。"
+                    },
+                    { 
+                        text: "在兒童節目中置入虛假健康廣告 (非法欺騙)", 
+                        type: "illegal",
+                        effect: { funds: 15, rep: -35, market: 5 },
+                        log: "廣告被查出嚴重誇大且誤導兒童，遭到各國政府開出天價罰單。"
+                    },
+                    { 
+                        text: "贊助各地學校的兒童運動賽事 (在地回饋)", 
+                        type: "glocal",
+                        effect: { funds: -15, rep: 20, market: 10 },
+                        log: "深入社區與在地學校合作，成功建立正面的品牌形象，長期獲益。"
+                    }
+                ]
+            }
+        ];
+
+        // 洗牌陣列函數
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        let currentScenarios = [];
+
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').innerHTML = message;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        function startGame() {
+            const nameInput = document.getElementById('player-name').value.trim();
+            if (!nameInput) {
+                showModal("注意", "請先輸入您的 CEO 姓名！");
+                return;
+            }
+            
+            state.name = nameInput;
+            document.getElementById('display-name').textContent = state.name;
+            
+            // 準備情境 (隨機打亂)
+            currentScenarios = shuffle([...scenarios]);
+            
+            // 切換畫面
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('game-screen').classList.add('flex');
+            
+            updateUI();
+            loadScenario();
+        }
+
+        function updateUI() {
+            // 確保數值在合理範圍 (資金跟市佔無上限，但有下限)
+            state.reputation = Math.max(0, Math.min(100, state.reputation));
+            state.marketShare = Math.max(0, state.marketShare);
+            
+            document.getElementById('display-turn').textContent = state.turn;
+            
+            // 數字動畫與更新
+            animateValue('stat-funds', parseInt(document.getElementById('stat-funds').innerText), state.funds, 500);
+            animateValue('stat-rep', parseInt(document.getElementById('stat-rep').innerText), state.reputation, 500);
+            animateValue('stat-market', parseInt(document.getElementById('stat-market').innerText), state.marketShare, 500);
+
+            // 更新進度條
+            updateBar('bar-funds', Math.min(100, state.funds / 2), state.funds < 0 ? 'bg-red-500' : 'bg-green-500');
+            updateBar('bar-rep', state.reputation, state.reputation < 30 ? 'bg-red-500' : (state.reputation > 70 ? 'bg-blue-400' : 'bg-blue-600'));
+            updateBar('bar-market', Math.min(100, state.marketShare), 'bg-yellow-500');
+        }
+
+        function updateBar(id, percentage, colorClass) {
+            const bar = document.getElementById(id);
+            bar.style.width = `${Math.max(0, percentage)}%`;
+            // Reset color classes
+            bar.className = `h-2.5 rounded-full progress-bar-transition ${colorClass}`;
+        }
+
+        function animateValue(id, start, end, duration) {
+            if (start === end) return;
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function addNewsLog(turn, logText, type) {
+            const logContainer = document.getElementById('news-log');
+            if (logContainer.innerHTML.includes("尚未有任何新聞")) {
+                logContainer.innerHTML = '';
+            }
+            
+            let colorClass = "text-gray-300";
+            if (type === "illegal") colorClass = "text-red-400";
+            if (type === "glocal") colorClass = "text-green-400";
+            
+            const entry = document.createElement('div');
+            entry.className = `p-3 bg-gray-800 rounded-lg border-l-4 ${type === 'illegal' ? 'border-red-500' : (type === 'glocal' ? 'border-green-500' : 'border-gray-500')} fade-in`;
+            entry.innerHTML = `<span class="text-xs text-gray-500 font-bold mb-1 block">第 ${turn} 回合</span><p class="${colorClass}">${logText}</p>`;
+            
+            logContainer.prepend(entry);
+        }
+
+        function loadScenario() {
+            if (state.turn > state.maxTurns || currentScenarios.length === 0) {
+                endGame();
+                return;
+            }
+
+            const scenario = currentScenarios.pop();
+            document.getElementById('scenario-title').textContent = scenario.title;
+            document.getElementById('scenario-desc').textContent = scenario.desc;
+            
+            const btnContainer = document.getElementById('action-buttons');
+            btnContainer.innerHTML = '';
+            
+            scenario.choices.forEach(choice => {
+                const btn = document.createElement('button');
+                
+                // Styling based on choice type (for visual hints)
+                let btnStyle = "bg-gray-700 hover:bg-gray-600 border border-gray-500 text-white";
+                
+                btn.className = `${btnStyle} text-left px-6 py-4 rounded-xl font-bold transition duration-300 transform hover:-translate-y-1 hover:shadow-lg flex items-center justify-between group`;
+                
+                btn.innerHTML = `
+                    <span>${choice.text}</span>
+                    <svg class="w-5 h-5 opacity-0 group-hover:opacity-100 transition text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                `;
+                
+                btn.onclick = () => handleChoice(choice);
+                btnContainer.appendChild(btn);
+            });
+        }
+
+        function handleChoice(choice) {
+            // Apply effects
+            state.funds += choice.effect.funds;
+            state.reputation += choice.effect.rep;
+            state.marketShare += choice.effect.market;
+            
+            // Log history
+            addNewsLog(state.turn, choice.log, choice.type);
+            
+            updateUI();
+            
+            // Check fail conditions
+            if (state.reputation <= 0) {
+                setTimeout(() => showGameOver("公司聲望崩盤！", "您的非法或極端冷血手段遭到了全球社會的聯合抵制，各國政府下令關閉您的所有營業據點。企業宣佈破產！"), 800);
+                return;
+            }
+            if (state.funds < 0) {
+                setTimeout(() => showGameOver("資金鏈斷裂！", "過度的擴張與錯誤的決策導致公司負債累累。銀行拒絕融資，企業宣告破產清算！"), 800);
+                return;
+            }
+
+            // Next turn
+            state.turn++;
+            setTimeout(() => {
+                loadScenario();
+            }, 500);
+        }
+
+        function showGameOver(title, reason) {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            
+            const endScreen = document.getElementById('end-screen');
+            endScreen.classList.remove('hidden');
+            
+            document.getElementById('end-title').textContent = title;
+            document.getElementById('end-title').className = "text-4xl font-black mb-2 text-red-500";
+            document.getElementById('end-subtitle').textContent = "企業倒閉";
+            
+            document.getElementById('end-funds').textContent = state.funds;
+            document.getElementById('end-rep').textContent = state.reputation;
+            document.getElementById('end-market').textContent = state.marketShare;
+            
+            document.getElementById('end-analysis').innerHTML = `
+                <strong>失敗原因：</strong> ${reason}<br><br>
+                <strong>教育解析：</strong> 在經濟全球化的過程中，雖然追求效率與利潤（麥當勞化）是企業本能，但完全忽視企業社會責任（CSR）、當地法規與文化脈絡，最終將面臨社會的反撲。全球化並非單向的強勢文化輸出，忽視「在地化」與「道德」的跨國企業無法長久生存。
+            `;
+        }
+
+        function endGame() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('flex');
+            
+            const endScreen = document.getElementById('end-screen');
+            endScreen.classList.remove('hidden');
+            
+            document.getElementById('end-funds').textContent = state.funds;
+            document.getElementById('end-rep').textContent = state.reputation;
+            document.getElementById('end-market').textContent = state.marketShare;
+            
+            let title = "遊戲結束";
+            let subtitle = "";
+            let analysis = "";
+            let titleColor = "text-white";
+
+            // 根據不同數值給予評價
+            if (state.funds > 150 && state.reputation < 40) {
+                title = "冷酷的資本巨獸";
+                subtitle = "「利潤高於一切」";
+                titleColor = "text-yellow-500";
+                analysis = `您成功擴張了帝國並賺取暴利，但也讓世界變得單一、冰冷，甚至犧牲了勞工與環境。這正是社會學家George Ritzer警告的<strong>「麥當勞化的鐵籠」</strong>：極致的效率、可計算性與控制，最終導致了人性的去人性化（Dehumanization）。`;
+            } else if (state.reputation > 70 && state.funds > 100) {
+                title = "全球化經營之神";
+                subtitle = "「共榮共存的典範」";
+                titleColor = "text-green-500";
+                analysis = `您展現了完美的<strong>「全球在地化 (Glocalization)」</strong>策略！在引進跨國標準化作業的同時，也尊重當地文化與社會責任。您證明了經濟全球化不需要以消滅在地文化為代價，企業可以透過良性互動達到永續經營。`;
+            } else if (state.marketShare > 50) {
+                title = "同質化霸主";
+                subtitle = "「讓世界長得一模一樣」";
+                titleColor = "text-blue-500";
+                analysis = `您的擴張非常成功，全球每個角落都開滿了您的連鎖店。這反映了全球化帶來的<strong>「文化同質化 (Homogenization)」</strong>現象。在地特色逐漸消失，取而代之的是高度標準化的跨國消費體驗。`;
+            } else {
+                title = "平庸的經營者";
+                subtitle = "「在激烈競爭中生存」";
+                analysis = `您的企業存活了下來，但未能在全球市場中取得統治地位。在全球化的浪潮中，跨國企業面臨著龐大的成本壓力與文化衝突，要在「標準化（降低成本）」與「在地化（爭取認同）」之間取得平衡，是一項艱難的挑戰。`;
+            }
+
+            document.getElementById('end-title').textContent = title;
+            document.getElementById('end-title').className = `text-4xl font-black mb-2 ${titleColor}`;
+            document.getElementById('end-subtitle').textContent = subtitle;
+            
+            // 補充總結教育意義
+            analysis += `<br><br><strong>結語：</strong>「麥當勞化」帶給我們極大的便利與效率，但也帶來了剝削、標準化扼殺多樣性等問題。未來的全球化，需要更多具有社會意識的決策來平衡資本的過度擴張。`;
+            
+            document.getElementById('end-analysis').innerHTML = analysis;
+        }
+    </script>
+</body>
+</html>
